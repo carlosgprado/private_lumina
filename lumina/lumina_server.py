@@ -146,7 +146,9 @@ class LuminaServer(ThreadingMixIn, TCPServer):
         """
         # check (message.hexrays_licence, message.hexrays_id, message.watermak, message.field_0x36)
         self.logger.debug("RPC client accepted")
+
         return True
+
 
 def signal_handler(sig, frame, server):
     print('Ctrl+C caught. Exiting')
@@ -166,7 +168,7 @@ def main():
     parser = argparse.ArgumentParser()
     parser.add_argument("db", type=argparse.FileType('a+'), default="", help="database file")
     parser.add_argument("-i", "--ip", dest="ip", type=str, default="127.0.0.1", help="listening ip address (default: 127.0.0.1")
-    parser.add_argument("-p", "--port", dest="port", type=int, default=4443, help="listening port (default: 4443")
+    parser.add_argument("-p", "--port", dest="port", type=int, default=8443, help="listening port (default: 8443")
     parser.add_argument("-c", "--cert", dest="cert", type=argparse.FileType('r'), default = None, help="proxy certfile (no cert means TLS OFF).")
     parser.add_argument("-k", "--key", dest="cert_key",type=argparse.FileType('r'), default = None, help="certificate private key")
     parser.add_argument("-l", "--log", dest="log_level", type=str, choices=["NOTSET", "DEBUG", "INFO", "WARNING"], default="INFO", help="log level bases on python logging value (default:info)")

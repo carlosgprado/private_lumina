@@ -1,53 +1,40 @@
+from pymongo import MongoClient
+
 import os, json
 from base64 import b64encode, b64decode
 
 class LuminaDatabase(object):
-    def __init__(self, logger, db_file):
+    def __init__(self, logger, db_name='test'):
         self.logger = logger
-        self.logger.info(f"loading database {os.path.abspath(db_file.name)}")
-        self.load(db_file)
+        self.client = None
+        self.db = None
+        self.collection = None
+
+        self.load(db_name)
 
 
-    def load(self, db_file):
-        self.db_file = db_file
-        self.db_file.seek(0, os.SEEK_SET)
+    def load(self, db_name):
+        self.client = MongoClient()
 
-        if os.stat(self.db_file.name).st_size == 0:
-            # create new db
-            self.db = dict()
-        else:
-            try:
-                self.db = json.load(self.db_file)
-            except Exception as e:
-                self.logger.exception(e)
-                self.db_file.close()
-                self.db = None
-                raise
-
-    def save(self):
         try:
-            self.logger.info(f"saving database to {self.db_file.name}")
-            self.db_file.seek(0, os.SEEK_SET)
-            json.dump(self.db, self.db_file)
+            self.db = self.client[db_name]
+            self.collection = self.db['lumina_data']
         except Exception as e:
             self.logger.exception(e)
+            self.client.close()
             raise
-        return True
 
     def close(self, save=False):
-        if save:
-            self.save()
-        self.db_file.close()
-        self.db = None
+        self.client.close()
+        self.db.close()
 
     def push(self, info):
-        """
-        return True on new insertion, else False
-        """
+        """Return True on new insertion, else False"""
 
         # Signature and metadata contains non string data that need to be encoded:
         sig_version = info.signature.version
         signature = b64encode(info.signature.signature).decode("ascii")
+
         metadata = {
             "func_name"         : info.metadata.func_name,
             "func_size"         : info.metadata.func_size,
@@ -57,28 +44,33 @@ class LuminaDatabase(object):
         if sig_version != 1:
             self.logger.warning("Signature version {sig_version} not supported. Results might be inconsistent")
 
-
-        # insert into database
+        # Insert into database
         new_sig = False
-        db_entry = self.db.get(signature, None)
+        db_entry = self.collection.find_one({"sig": signature})
 
         if db_entry is None:
+            # The entry does NOT exist in the collection. Create a new one.
+            # TODO: Collision/merge not implemented yet. Just keep every push queries.
             db_entry = {
-                "metadata": list(), # collision/merge not implemented yet. just keep every push queries
+                "sig": signature,
+                "metadata": list(),
                 "popularity" : 0
             }
-            self.db[signature] = db_entry
-            new_sig = True
 
-        db_entry["metadata"].append(metadata)
-        db_entry["popularity"] += 1
+            new_sig = True
+        else:
+            # Existing entry. Update it.
+            db_entry["metadata"].append(metadata)
+            db_entry["popularity"] += 1
+
+        # Actually insert this data into the collection :)
+        self.collection.insert_one(db_entry)
 
         return new_sig
 
-    def pull(self,signature):
-        """
-        return function metadata or None if not found
-        """
+
+    def pull(self, signature):
+        """Return function metadata or None if not found"""
 
         sig_version = signature.version
         signature = b64encode(signature.signature).decode("ascii")
@@ -86,11 +78,11 @@ class LuminaDatabase(object):
         if sig_version != 1:
             self.logger.warning("Signature version {sig_version} not supported. Results might be inconsistent")
 
-        # query database
-        db_entry = self.db.get(signature, None)
+        # Query database
+        db_entry = self.collection.find_one({"sig": signature})
 
         if db_entry:
-            # take last signature (arbitrary choice)
+            # Take last signature (arbitrary choice)
             metadata = db_entry["metadata"][-1]
 
             # Decode signature (take that last match for a result)
@@ -106,4 +98,5 @@ class LuminaDatabase(object):
             }
 
             return result
+
         return None
