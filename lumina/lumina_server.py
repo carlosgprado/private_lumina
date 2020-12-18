@@ -178,7 +178,7 @@ def main():
     logger.setLevel(config.log_level)
 
     # create db & server
-    database = LuminaDatabase(logger, config.db)
+    database = LuminaDatabase(logger, "test")
     TCPServer.allow_reuse_address = True
     server = LuminaServer(database, config, logger)
 

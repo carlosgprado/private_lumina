@@ -11,7 +11,7 @@ setup(name='lumina',
       package_data={"lumina": [""]},
       test_suite="tests",
       scripts=[],
-      install_requires=["construct"],
+      install_requires=["construct", "pymongo"],
       entry_points={
           'console_scripts' : ['lumina_server=lumina.lumina_server:main']
       })

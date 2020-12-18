@@ -4,7 +4,7 @@ import os, json
 from base64 import b64encode, b64decode
 
 class LuminaDatabase(object):
-    def __init__(self, logger, db_name='test'):
+    def __init__(self, logger, db_name="test"):
         self.logger = logger
         self.client = None
         self.db = None
@@ -14,7 +14,7 @@ class LuminaDatabase(object):
 
 
     def load(self, db_name):
-        self.client = MongoClient()
+        self.client = MongoClient('mongodb://mongoadmin:secret@localhost:27017/')
 
         try:
             self.db = self.client[db_name]
@@ -26,7 +26,6 @@ class LuminaDatabase(object):
 
     def close(self, save=False):
         self.client.close()
-        self.db.close()
 
     def push(self, info):
         """Return True on new insertion, else False"""
@@ -51,20 +50,29 @@ class LuminaDatabase(object):
         if db_entry is None:
             # The entry does NOT exist in the collection. Create a new one.
             # TODO: Collision/merge not implemented yet. Just keep every push queries.
-            db_entry = {
+            new_entry = {
                 "sig": signature,
                 "metadata": list(),
                 "popularity" : 0
             }
 
-            new_sig = True
+            # Actually insert this data into the collection :)
+            try:
+                self.collection.insert_one(new_entry)
+                new_sig = True
+            except Exception as e:
+                self.logger.error(e)
+
         else:
             # Existing entry. Update it.
             db_entry["metadata"].append(metadata)
             db_entry["popularity"] += 1
-
-        # Actually insert this data into the collection :)
-        self.collection.insert_one(db_entry)
+            self.collection.update(
+                    {"sig": signature},
+                    {"$set": {
+                        "metadata": db_entry["metadata"],
+                        "popularity": db_entry["popularity"]
+                        }})
 
         return new_sig
 
@@ -83,17 +91,21 @@ class LuminaDatabase(object):
 
         if db_entry:
             # Take last signature (arbitrary choice)
-            metadata = db_entry["metadata"][-1]
+            _metadata_list = db_entry["metadata"]
+            if _metadata_list:
+                metadata = _metadata_list[-1]
+            else:
+                return None
 
             # Decode signature (take that last match for a result)
-            metadata = {
+            _metadata = {
                 "func_name"         : metadata["func_name"],
                 "func_size"         : metadata["func_size"],
                 "serialized_data"   : b64decode(metadata["serialized_data"]),
             }
 
             result = {
-                "metadata"   : metadata,
+                "metadata"   : _metadata,
                 "popularity" : db_entry["popularity"]
             }
 
