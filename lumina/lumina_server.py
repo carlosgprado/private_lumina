@@ -75,10 +75,10 @@ class LuminaRequestHandler(BaseRequestHandler):
             for sig in message.funcInfos:
                 metadata = self.database.pull(sig)
                 if metadata:
-                    found.append(1)
+                    found.append(0)
                     results.append(metadata)
                 else:
-                    found.append(0)
+                    found.append(1)
 
             self.sendMessage(RPC_TYPE.PULL_MD_RESULT, found = found, results =results)
 
