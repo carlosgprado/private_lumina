@@ -1,7 +1,10 @@
+import os
+import json
+
+from base64 import b64encode, b64decode
 from pymongo import MongoClient
 
-import os, json
-from base64 import b64encode, b64decode
+
 
 class LuminaDatabase(object):
     def __init__(self, logger, db_name="test"):
@@ -14,7 +17,7 @@ class LuminaDatabase(object):
 
 
     def load(self, db_name):
-        self.client = MongoClient('mongodb://mongoadmin:secret@localhost:27017/')
+        self.client = MongoClient('mongodb://mongoadmin:secret@mongo-server:27017/')
 
         try:
             self.db = self.client[db_name]
@@ -64,15 +67,18 @@ class LuminaDatabase(object):
                 self.logger.error(e)
 
         else:
-            # Existing entry. Update it.
-            db_entry["metadata"].append(metadata)
-            db_entry["popularity"] += 1
-            self.collection.update(
-                    {"sig": signature},
-                    {"$set": {
-                        "metadata": db_entry["metadata"],
-                        "popularity": db_entry["popularity"]
-                        }})
+            try:
+                # Existing entry. Update it.
+                db_entry["metadata"].append(metadata)
+                db_entry["popularity"] += 1
+                self.collection.update(
+                        {"sig": signature},
+                        {"$set": {
+                            "metadata": db_entry["metadata"],
+                            "popularity": db_entry["popularity"]
+                            }})
+            except Exception as e:
+                self.logger.error(e)
 
         return new_sig
 
@@ -112,3 +118,4 @@ class LuminaDatabase(object):
             return result
 
         return None
+

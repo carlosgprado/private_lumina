@@ -91,3 +91,4 @@ Start server, (re)start IDA with an idb database and push your first function us
 Hit `ctrl-c` to terminate server and save database.
 
 **Important**: keep in mind that the database is only saved or updated on server exit (`ctrl-c`).
+

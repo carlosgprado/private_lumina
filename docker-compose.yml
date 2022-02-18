@@ -1,0 +1,35 @@
+version: "3"
+services:
+  mongo-server:
+    image: mongo
+    container_name: mongo-db
+    environment:
+      - MONGO_INITDB_ROOT_USERNAME=mongoadmin
+      - MONGO_INITDB_ROOT_PASSWORD=secret
+    ports:
+        - 27017:27017
+    volumes:
+      - mongo-data:/data/db
+    networks:
+      - lumina-net
+
+  lumina:
+    container_name: lumina-server
+    build: .  # replaces image for dev
+    restart: on-failure
+    command: python ./lumina_server.py
+    depends_on:
+      - mongo-server
+    ports:
+      - 8443:8443
+    volumes:
+      - ./lumina:/opt/lumina
+    networks:
+      - lumina-net
+
+volumes:
+  mongo-data:
+
+networks:
+  lumina-net:
+
