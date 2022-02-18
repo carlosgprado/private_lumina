@@ -2,16 +2,13 @@
 
 import os, sys, argparse, logging, signal, threading
 
-from socketserver import ThreadingMixIn, TCPServer, BaseRequestHandler
 import socket, ssl
+from socketserver import ThreadingMixIn, TCPServer, BaseRequestHandler
 
-try:
-    from lumina.lumina_structs import rpc_message_parse, rpc_message_build, RPC_TYPE
-    from lumina.database import LuminaDatabase
-except ImportError:
-    # local import for standalone use
-    from lumina_structs import rpc_message_parse, rpc_message_build, RPC_TYPE
-    from database import LuminaDatabase
+
+# local import for standalone use
+from lumina_structs import rpc_message_parse, rpc_message_build, RPC_TYPE
+from database import LuminaDatabase
 
 
 ################################################################################
@@ -166,8 +163,7 @@ def main():
 
     # Parse command line
     parser = argparse.ArgumentParser()
-    parser.add_argument("db", type=argparse.FileType('a+'), default="", help="database file")
-    parser.add_argument("-i", "--ip", dest="ip", type=str, default="127.0.0.1", help="listening ip address (default: 127.0.0.1")
+    parser.add_argument("-i", "--ip", dest="ip", type=str, default="0.0.0.0", help="listening ip address (default: 0.0.0.0")
     parser.add_argument("-p", "--port", dest="port", type=int, default=8443, help="listening port (default: 8443")
     parser.add_argument("-c", "--cert", dest="cert", type=argparse.FileType('r'), default = None, help="proxy certfile (no cert means TLS OFF).")
     parser.add_argument("-k", "--key", dest="cert_key",type=argparse.FileType('r'), default = None, help="certificate private key")
@@ -193,5 +189,7 @@ def main():
 
     server.database.close(save=True)
 
+
 if __name__ == "__main__":
     main()
+
