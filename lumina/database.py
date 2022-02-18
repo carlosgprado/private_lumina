@@ -71,7 +71,7 @@ class LuminaDatabase(object):
                 # Existing entry. Update it.
                 db_entry["metadata"].append(metadata)
                 db_entry["popularity"] += 1
-                self.collection.update(
+                self.collection.update_one(
                         {"sig": signature},
                         {"$set": {
                             "metadata": db_entry["metadata"],
